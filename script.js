@@ -1,47 +1,61 @@
-const output = document.getElementById("output");
-const loading = document.createElement("div");
-const errorDiv = document.createElement("div");
-loading.id = "loading";
-errorDiv.id = "error";
-loading.innerText = "Loading...";
-errorDiv.style.color = "red";
-document.body.appendChild(loading);
-document.body.appendChild(errorDiv);
-loading.style.display = "none";
-errorDiv.style.display = "none";
 
-const images = [
-  { url: "https://picsum.photos/id/237/200/300" },
-  { url: "https://picsum.photos/id/238/200/300" },
-  { url: "https://picsum.photos/id/239/200/300" },
-];
 
-function downloadImage(imageUrl) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = imageUrl;
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(`Failed to load image: ${imageUrl}`);
-  });
-}
+document.addEventListener("DOMContentLoaded", function () {
+    const output = document.getElementById("output");
 
-function downloadImages() {
-  loading.style.display = "block";
-  errorDiv.style.display = "none";
-  output.innerHTML = "";
+    // Create required divs
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "loading";
+    loadingDiv.innerText = "Loading...";
+    loadingDiv.style.display = "none"; // Initially hidden
+    output.appendChild(loadingDiv);
 
-  const imagePromises = images.map((img) => downloadImage(img.url));
+    const errorDiv = document.createElement("div");
+    errorDiv.id = "error";
+    errorDiv.style.color = "red";
+    output.appendChild(errorDiv);
 
-  Promise.all(imagePromises)
-    .then((downloadedImages) => {
-      loading.style.display = "none";
-      downloadedImages.forEach((img) => output.appendChild(img));
-    })
-    .catch((error) => {
-      loading.style.display = "none";
-      errorDiv.innerText = error;
-      errorDiv.style.display = "block";
-    });
-}
+    const images = [
+        { url: "https://picsum.photos/id/237/200/300" },
+        { url: "https://picsum.photos/id/238/200/300" },
+        { url: "https://picsum.photos/id/239/200/300" }
+    ];
 
-downloadImages();
+    // Function to download a single image
+    function downloadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(img); // Resolve when the image loads
+            img.onerror = () => reject(`Failed to load image: ${url}`); // Reject if the image fails to load
+        });
+    }
+
+    // Function to download all images in parallel
+    async function downloadImages() {
+        errorDiv.innerText = ""; // Clear previous errors
+        output.innerHTML = ""; // Clear previous images
+        output.appendChild(loadingDiv);
+        loadingDiv.style.display = "block"; // Show loading spinner
+
+        try {
+            const imagePromises = images.map(image => downloadImage(image.url));
+            const loadedImages = await Promise.all(imagePromises); // Download all images in parallel
+
+            loadingDiv.style.display = "none"; // Hide loading spinner
+
+            // Append images to output div
+            loadedImages.forEach(img => output.appendChild(img));
+        } catch (error) {
+            loadingDiv.style.display = "none"; // Hide loading spinner
+            errorDiv.innerText = error; // Display error message
+        }
+    }
+
+    // Create and append the button
+    const btn = document.createElement("button");
+    btn.id = "download-images-button";
+    btn.innerText = "Download Images";
+    btn.addEventListener("click", downloadImages);
+    output.appendChild(btn);
+});
